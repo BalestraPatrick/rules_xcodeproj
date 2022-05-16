@@ -297,7 +297,10 @@ for output_group in "${output_groups[@]}"; do
   filelist="${filelist/#/bazel-out/\#(xcodeprojBinDir)/}"
   filelist="${filelist/%/.filelist}"
   if ! grep -q "^  $filelist$" "$log"; then
-    echo "error: Bazel didn't generate the files asked of it. Please regenerate the project to fix this. If your bazel version is less than 5.2, you may need to \`bazel clean\` and \`bazel shutdown\` to work around a bug in project generation. If you still are getting this error, please file a bug report here: https://github.com/buildbuddy-io/rules_xcodeproj/issues/new?template=bug.md." >&2
+    echo "$output_group"
+    echo "$filelist"
+    echo "$log"
+    echo "er: Bazel didn't generate the files asked of it. Please regenerate the project to fix this. If your bazel version is less than 5.2, you may need to \`bazel clean\` and \`bazel shutdown\` to work around a bug in project generation. If you still are getting this error, please file a bug report here: https://github.com/buildbuddy-io/rules_xcodeproj/issues/new?template=bug.md." >&2
     exit 1
   fi
 done
