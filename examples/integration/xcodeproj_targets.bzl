@@ -23,14 +23,14 @@ UNFOCUSED_TARGETS = [
 ]
 
 XCODEPROJ_TARGETS = [
-    top_level_target(
-        label = "//CommandLine/CommandLineTool",
-        target_environments = ["device"],
-    ),
-    top_level_target(
-        label = "//CommandLine/Tests:CommandLineToolTests",
-        target_environments = ["device"],
-    ),
+    # top_level_target(
+    #     label = "//CommandLine/CommandLineTool",
+    #     target_environments = ["device"],
+    # ),
+    # top_level_target(
+    #     label = "//CommandLine/Tests:CommandLineToolTests",
+    #     target_environments = ["device"],
+    # ),
     top_level_targets(
         labels = [
             "//iOSApp",
@@ -39,7 +39,7 @@ XCODEPROJ_TARGETS = [
             "//Lib/dist/dynamic:watchOS",
             "//tvOSApp",
         ],
-        target_environments = ["device", "simulator"],
+        target_environments = ["simulator"],
     ),
     "//iOSApp/Test/ObjCUnitTests:iOSAppObjCUnitTests",
     "//iMessageApp",
