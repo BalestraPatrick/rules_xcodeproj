@@ -37,6 +37,7 @@ filegroup(
         ],
     ) + [
         "//" + package_name() + "/bazel_integration_files:release_files",
+        "//" + package_name() + "/cat:release_files",
         "//" + package_name() + "/templates:release_files",
     ],
     tags = ["manual"],

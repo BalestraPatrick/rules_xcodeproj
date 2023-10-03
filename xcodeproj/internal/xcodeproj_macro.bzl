@@ -6,6 +6,7 @@ load(":project_options.bzl", _default_project_options = "project_options")
 load(":top_level_target.bzl", "top_level_target")
 load(":xcode_schemes.bzl", "focus_schemes", "unfocus_schemes")
 load(":xcodeproj_runner.bzl", "xcodeproj_runner")
+load(":xcschemes.bzl", "xcschemes_internal")
 
 def _normalize_build_setting(flag):
     if flag.startswith("//command_line_option:"):
@@ -45,6 +46,7 @@ def xcodeproj(
         watchos_device_cpus = "arm64_32",
         watchos_simulator_cpus = None,
         xcode_configurations = {"Debug": {}},
+        xcschemes = [],
         **kwargs):
     """Creates an `.xcodeproj` file in the workspace when run.
 
@@ -345,6 +347,8 @@ def xcodeproj(
     """
     is_fixture = kwargs.pop("is_fixture", False)
     testonly = kwargs.pop("testonly", True)
+    generation_mode = kwargs.pop("generation_mode", "legacy")
+    generation_shard_count = kwargs.pop("generation_shard_count", 10)
 
     if archived_bundles_allowed != None:
         warn("""\
@@ -444,7 +448,23 @@ alphabetically ("{default}").
     ]
 
     schemes_json = None
-    if schemes:
+    xcschemes_json = "[]"
+    if generation_mode == "incremental":
+        xcschemes = xcschemes or []
+        if type(xcschemes) != "list":
+            fail("`xcodeproj.xcschemes` must be a list.")
+
+        if schemes and len(schemes) != len(xcschemes):
+            warn("""\
+`xcodeproj.generation_mode = "incremental"` and `xcodeproj.schemes` are set, but \
+`xcodeproj.xcschemes` doesn't have the same number of elements. Your schemes \
+will not be the same as when `xcodeproj.generation_mode = "legacy" is set.
+""")
+
+        xcschemes_json = json.encode(
+            xcschemes_internal.resolve_labels(xcschemes),
+        )
+    elif schemes:
         if unfocused_labels:
             schemes = unfocus_schemes(
                 schemes = schemes,
@@ -516,6 +536,8 @@ Please refer to https://bazel.build/extending/config#defining) on how to them.
         default_xcode_configuration = default_xcode_configuration,
         fail_for_invalid_extra_files_targets = fail_for_invalid_extra_files_targets,
         focused_labels = focused_labels,
+        generation_mode = generation_mode,
+        generation_shard_count = generation_shard_count,
         install_directory = install_directory,
         ios_device_cpus = ios_device_cpus,
         ios_simulator_cpus = ios_simulator_cpus,
@@ -541,5 +563,6 @@ Please refer to https://bazel.build/extending/config#defining) on how to them.
         xcode_configuration_flags = xcode_configuration_flags,
         xcode_configuration_map = xcode_configuration_map,
         xcode_configurations = str(dedupped_xcode_configurations),
+        xcschemes_json = xcschemes_json,
         **kwargs
     )

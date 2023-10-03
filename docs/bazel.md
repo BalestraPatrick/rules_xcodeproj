@@ -30,6 +30,20 @@ load("@rules_xcodeproj//xcodeproj:defs.bzl", "xcodeproj")
   - [`xcode_schemes.diagnostics`](#xcode_schemes.diagnostics)
   - [`xcode_schemes.sanitizers`](#xcode_schemes.sanitizers)
   - [`xcode_schemes.pre_post_action`](#xcode_schemes.pre_post_action)
+- [Custom Xcode schemes (Incremental Generator)](#custom-xcode-schemes-incremental-generator)
+  - [`xcschemes.scheme`](#xcschemes.scheme)
+  - [`xcschemes.test`](#xcschemes.test)
+  - [`xcschemes.run`](#xcschemes.run)
+  - [`xcschemes.profile`](#xcschemes.profile)
+  - [`xcschemes.launch_target`](#xcschemes.launch_target)
+  - [`xcschemes.test_target`](#xcschemes.test_target)
+  - [`xcschemes.top_level_build_target`](#xcschemes.top_level_build_target)
+  - [`xcschemes.top_level_anchor_build_target`](#xcschemes.top_level_anchor_build_target)
+  - [`xcschemes.library_target`](#xcschemes.library_target)
+  - [`xcschemes.arg`](#xcschemes.arg)
+  - [`xcschemes.env`](#xcschemes.env)
+  - [`xcschemes.pre_post_actions.build_script`](#xcschemes.pre_post_actions.build_script)
+  - [`xcschemes.pre_post_actions.launch_script`](#xcschemes.pre_post_actions.launch_script)
 - [Xcode build settings](#xcode-build-settings)
   - [`xcode_provisioning_profile`](#xcode_provisioning_profile)
 - [Providers](#providers)
@@ -51,7 +65,7 @@ xcodeproj(<a href="#xcodeproj-name">name</a>, <a href="#xcodeproj-adjust_schemes
           <a href="#xcodeproj-minimum_xcode_version">minimum_xcode_version</a>, <a href="#xcodeproj-post_build">post_build</a>, <a href="#xcodeproj-pre_build">pre_build</a>, <a href="#xcodeproj-project_name">project_name</a>, <a href="#xcodeproj-project_options">project_options</a>,
           <a href="#xcodeproj-scheme_autogeneration_mode">scheme_autogeneration_mode</a>, <a href="#xcodeproj-schemes">schemes</a>, <a href="#xcodeproj-target_name_mode">target_name_mode</a>, <a href="#xcodeproj-temporary_directory">temporary_directory</a>,
           <a href="#xcodeproj-top_level_targets">top_level_targets</a>, <a href="#xcodeproj-tvos_device_cpus">tvos_device_cpus</a>, <a href="#xcodeproj-tvos_simulator_cpus">tvos_simulator_cpus</a>, <a href="#xcodeproj-unfocused_targets">unfocused_targets</a>,
-          <a href="#xcodeproj-watchos_device_cpus">watchos_device_cpus</a>, <a href="#xcodeproj-watchos_simulator_cpus">watchos_simulator_cpus</a>, <a href="#xcodeproj-xcode_configurations">xcode_configurations</a>, <a href="#xcodeproj-kwargs">kwargs</a>)
+          <a href="#xcodeproj-watchos_device_cpus">watchos_device_cpus</a>, <a href="#xcodeproj-watchos_simulator_cpus">watchos_simulator_cpus</a>, <a href="#xcodeproj-xcode_configurations">xcode_configurations</a>, <a href="#xcodeproj-xcschemes">xcschemes</a>, <a href="#xcodeproj-kwargs">kwargs</a>)
 </pre>
 
 Creates an `.xcodeproj` file in the workspace when run.
@@ -113,6 +127,7 @@ xcodeproj(
 | <a id="xcodeproj-watchos_device_cpus"></a>watchos_device_cpus |  Optional. The value to use for `--watchos_cpus` when building the transitive dependencies of the targets specified in the `top_level_targets` argument with the `"device"` `target_environment`.<br><br>**Warning:** Changing this value will affect the Starlark transition hash of all transitive dependencies of the targets specified in the `top_level_targets` argument with the `"device"` `target_environment`, even if they aren't watchOS targets.   |  `"arm64_32"` |
 | <a id="xcodeproj-watchos_simulator_cpus"></a>watchos_simulator_cpus |  Optional. The value to use for `--watchos_cpus` when building the transitive dependencies of the targets specified in the `top_level_targets` argument with the `"simulator"` `target_environment`.<br><br>If no value is specified, it defaults to the simulator cpu that goes with `--host_cpu` (i.e. `arm64` on Apple Silicon and `x86_64` on Intel).<br><br>**Warning:** Changing this value will affect the Starlark transition hash of all transitive dependencies of the targets specified in the `top_level_targets` argument with the `"simulator"` `target_environment`, even if they aren't watchOS targets.   |  `None` |
 | <a id="xcodeproj-xcode_configurations"></a>xcode_configurations |  Optional. A `dict` mapping Xcode configuration names to transition settings dictionaries. For example:<br><br><pre><code class="language-starlark">{&#10;    "Dev": {&#10;        "//command_line_option:compilation_mode": "dbg",&#10;    },&#10;    "AppStore": {&#10;        "//command_line_option:compilation_mode": "opt",&#10;    },&#10;}</code></pre><br><br>would create the "Dev" and "AppStore" configurations, setting `--compilation_mode` to `dbg` and `opt` respectively.<br><br>Refer to the [bazel documentation](https://bazel.build/extending/config#defining) on how to define the transition settings dictionary.   |  `{"Debug": {}}` |
+| <a id="xcodeproj-xcschemes"></a>xcschemes |  <p align="center"> - </p>   |  `[]` |
 | <a id="xcodeproj-kwargs"></a>kwargs |  Additional arguments to pass to the underlying `xcodeproj` rule specified by `xcodeproj_rule`.   |  none |
 
 
@@ -447,6 +462,323 @@ Constructs a test action for an Xcode scheme.
 **RETURNS**
 
 A `struct` representing a test action.
+
+
+# Custom Xcode schemes (Incremental Generator)
+
+To use these functions, `load` the `xcschemes` module from `xcodeproj/defs.bzl`:
+
+```starlark
+load("@rules_xcodeproj//xcodeproj:defs.bzl", "xcschemes")
+```
+
+<a id="xcschemes.arg"></a>
+
+## xcschemes.arg
+
+<pre>
+xcschemes.arg(<a href="#xcschemes.arg-value">value</a>, <a href="#xcschemes.arg-enabled">enabled</a>)
+</pre>
+
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.arg-value"></a>value |  <p align="center"> - </p>   |  none |
+| <a id="xcschemes.arg-enabled"></a>enabled |  <p align="center"> - </p>   |  `True` |
+
+
+<a id="xcschemes.diagnostics"></a>
+
+## xcschemes.diagnostics
+
+<pre>
+xcschemes.diagnostics(<a href="#xcschemes.diagnostics-address_sanitizer">address_sanitizer</a>, <a href="#xcschemes.diagnostics-thread_sanitizer">thread_sanitizer</a>, <a href="#xcschemes.diagnostics-undefined_behavior_sanitizer">undefined_behavior_sanitizer</a>)
+</pre>
+
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.diagnostics-address_sanitizer"></a>address_sanitizer |  <p align="center"> - </p>   |  `False` |
+| <a id="xcschemes.diagnostics-thread_sanitizer"></a>thread_sanitizer |  <p align="center"> - </p>   |  `False` |
+| <a id="xcschemes.diagnostics-undefined_behavior_sanitizer"></a>undefined_behavior_sanitizer |  <p align="center"> - </p>   |  `False` |
+
+
+<a id="xcschemes.env"></a>
+
+## xcschemes.env
+
+<pre>
+xcschemes.env(<a href="#xcschemes.env-value">value</a>, <a href="#xcschemes.env-enabled">enabled</a>)
+</pre>
+
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.env-value"></a>value |  <p align="center"> - </p>   |  none |
+| <a id="xcschemes.env-enabled"></a>enabled |  <p align="center"> - </p>   |  `True` |
+
+
+<a id="xcschemes.launch_target"></a>
+
+## xcschemes.launch_target
+
+<pre>
+xcschemes.launch_target(<a href="#xcschemes.launch_target-label">label</a>, <a href="#xcschemes.launch_target-extension_host">extension_host</a>, <a href="#xcschemes.launch_target-library_targets">library_targets</a>, <a href="#xcschemes.launch_target-post_actions">post_actions</a>, <a href="#xcschemes.launch_target-pre_actions">pre_actions</a>,
+                        <a href="#xcschemes.launch_target-target_environment">target_environment</a>, <a href="#xcschemes.launch_target-working_directory">working_directory</a>)
+</pre>
+
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.launch_target-label"></a>label |  <p align="center"> - </p>   |  none |
+| <a id="xcschemes.launch_target-extension_host"></a>extension_host |  <p align="center"> - </p>   |  `None` |
+| <a id="xcschemes.launch_target-library_targets"></a>library_targets |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.launch_target-post_actions"></a>post_actions |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.launch_target-pre_actions"></a>pre_actions |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.launch_target-target_environment"></a>target_environment |  <p align="center"> - </p>   |  `None` |
+| <a id="xcschemes.launch_target-working_directory"></a>working_directory |  <p align="center"> - </p>   |  `None` |
+
+
+<a id="xcschemes.library_target"></a>
+
+## xcschemes.library_target
+
+<pre>
+xcschemes.library_target(<a href="#xcschemes.library_target-label">label</a>, <a href="#xcschemes.library_target-post_actions">post_actions</a>, <a href="#xcschemes.library_target-pre_actions">pre_actions</a>)
+</pre>
+
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.library_target-label"></a>label |  <p align="center"> - </p>   |  none |
+| <a id="xcschemes.library_target-post_actions"></a>post_actions |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.library_target-pre_actions"></a>pre_actions |  <p align="center"> - </p>   |  `[]` |
+
+
+<a id="xcschemes.pre_post_actions.build_script"></a>
+
+## xcschemes.pre_post_actions.build_script
+
+<pre>
+xcschemes.pre_post_actions.build_script(<a href="#xcschemes.pre_post_actions.build_script-title">title</a>, <a href="#xcschemes.pre_post_actions.build_script-order">order</a>, <a href="#xcschemes.pre_post_actions.build_script-script_text">script_text</a>)
+</pre>
+
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.pre_post_actions.build_script-title"></a>title |  <p align="center"> - </p>   |  none |
+| <a id="xcschemes.pre_post_actions.build_script-order"></a>order |  <p align="center"> - </p>   |  `None` |
+| <a id="xcschemes.pre_post_actions.build_script-script_text"></a>script_text |  <p align="center"> - </p>   |  none |
+
+
+<a id="xcschemes.pre_post_actions.launch_script"></a>
+
+## xcschemes.pre_post_actions.launch_script
+
+<pre>
+xcschemes.pre_post_actions.launch_script(<a href="#xcschemes.pre_post_actions.launch_script-title">title</a>, <a href="#xcschemes.pre_post_actions.launch_script-order">order</a>, <a href="#xcschemes.pre_post_actions.launch_script-script_text">script_text</a>)
+</pre>
+
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.pre_post_actions.launch_script-title"></a>title |  <p align="center"> - </p>   |  none |
+| <a id="xcschemes.pre_post_actions.launch_script-order"></a>order |  <p align="center"> - </p>   |  `None` |
+| <a id="xcschemes.pre_post_actions.launch_script-script_text"></a>script_text |  <p align="center"> - </p>   |  none |
+
+
+<a id="xcschemes.profile"></a>
+
+## xcschemes.profile
+
+<pre>
+xcschemes.profile(<a href="#xcschemes.profile-args">args</a>, <a href="#xcschemes.profile-build_targets">build_targets</a>, <a href="#xcschemes.profile-env">env</a>, <a href="#xcschemes.profile-env_include_default">env_include_default</a>, <a href="#xcschemes.profile-launch_target">launch_target</a>,
+                  <a href="#xcschemes.profile-use_run_args_and_env">use_run_args_and_env</a>, <a href="#xcschemes.profile-xcode_configuration">xcode_configuration</a>)
+</pre>
+
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.profile-args"></a>args |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.profile-build_targets"></a>build_targets |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.profile-env"></a>env |  <p align="center"> - </p>   |  `{}` |
+| <a id="xcschemes.profile-env_include_default"></a>env_include_default |  <p align="center"> - </p>   |  `True` |
+| <a id="xcschemes.profile-launch_target"></a>launch_target |  <p align="center"> - </p>   |  `None` |
+| <a id="xcschemes.profile-use_run_args_and_env"></a>use_run_args_and_env |  <p align="center"> - </p>   |  `None` |
+| <a id="xcschemes.profile-xcode_configuration"></a>xcode_configuration |  <p align="center"> - </p>   |  `None` |
+
+
+<a id="xcschemes.run"></a>
+
+## xcschemes.run
+
+<pre>
+xcschemes.run(<a href="#xcschemes.run-args">args</a>, <a href="#xcschemes.run-build_targets">build_targets</a>, <a href="#xcschemes.run-diagnostics">diagnostics</a>, <a href="#xcschemes.run-env">env</a>, <a href="#xcschemes.run-env_include_default">env_include_default</a>, <a href="#xcschemes.run-launch_target">launch_target</a>,
+              <a href="#xcschemes.run-xcode_configuration">xcode_configuration</a>)
+</pre>
+
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.run-args"></a>args |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.run-build_targets"></a>build_targets |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.run-diagnostics"></a>diagnostics |  <p align="center"> - </p>   |  `None` |
+| <a id="xcschemes.run-env"></a>env |  <p align="center"> - </p>   |  `{}` |
+| <a id="xcschemes.run-env_include_default"></a>env_include_default |  <p align="center"> - </p>   |  `True` |
+| <a id="xcschemes.run-launch_target"></a>launch_target |  <p align="center"> - </p>   |  `None` |
+| <a id="xcschemes.run-xcode_configuration"></a>xcode_configuration |  <p align="center"> - </p>   |  `None` |
+
+
+<a id="xcschemes.scheme"></a>
+
+## xcschemes.scheme
+
+<pre>
+xcschemes.scheme(<a href="#xcschemes.scheme-name">name</a>, <a href="#xcschemes.scheme-profile">profile</a>, <a href="#xcschemes.scheme-run">run</a>, <a href="#xcschemes.scheme-test">test</a>)
+</pre>
+
+Defines a custom scheme.
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.scheme-name"></a>name |  The name of the scheme.   |  none |
+| <a id="xcschemes.scheme-profile"></a>profile |  A value returned by `xcschemes.profile`, or the string `"same_as_run"`. If `"same_as_run"`, the same targets will be built for the Profile action as are built for the Run action (defined by `xcschemes.run`). If `None`, `xcschemes.profile()` will be used, which means no targets will be built for the Profile action.   |  `"same_as_run"` |
+| <a id="xcschemes.scheme-run"></a>run |  A value returned by `xcschemes.run`. If `None`, `xcschemes.run()` will be used.   |  `None` |
+| <a id="xcschemes.scheme-test"></a>test |  A value returned by `xcschemes.test`. If `None`, `xcschemes.test()` will be used.   |  `None` |
+
+
+<a id="xcschemes.test"></a>
+
+## xcschemes.test
+
+<pre>
+xcschemes.test(<a href="#xcschemes.test-args">args</a>, <a href="#xcschemes.test-build_targets">build_targets</a>, <a href="#xcschemes.test-diagnostics">diagnostics</a>, <a href="#xcschemes.test-env">env</a>, <a href="#xcschemes.test-env_include_default">env_include_default</a>, <a href="#xcschemes.test-test_targets">test_targets</a>,
+               <a href="#xcschemes.test-use_run_args_and_env">use_run_args_and_env</a>, <a href="#xcschemes.test-xcode_configuration">xcode_configuration</a>)
+</pre>
+
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.test-args"></a>args |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.test-build_targets"></a>build_targets |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.test-diagnostics"></a>diagnostics |  <p align="center"> - </p>   |  `None` |
+| <a id="xcschemes.test-env"></a>env |  <p align="center"> - </p>   |  `{}` |
+| <a id="xcschemes.test-env_include_default"></a>env_include_default |  <p align="center"> - </p>   |  `True` |
+| <a id="xcschemes.test-test_targets"></a>test_targets |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.test-use_run_args_and_env"></a>use_run_args_and_env |  <p align="center"> - </p>   |  `None` |
+| <a id="xcschemes.test-xcode_configuration"></a>xcode_configuration |  <p align="center"> - </p>   |  `None` |
+
+
+<a id="xcschemes.test_target"></a>
+
+## xcschemes.test_target
+
+<pre>
+xcschemes.test_target(<a href="#xcschemes.test_target-label">label</a>, <a href="#xcschemes.test_target-enabled">enabled</a>, <a href="#xcschemes.test_target-library_targets">library_targets</a>, <a href="#xcschemes.test_target-post_actions">post_actions</a>, <a href="#xcschemes.test_target-pre_actions">pre_actions</a>,
+                      <a href="#xcschemes.test_target-target_environment">target_environment</a>)
+</pre>
+
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.test_target-label"></a>label |  <p align="center"> - </p>   |  none |
+| <a id="xcschemes.test_target-enabled"></a>enabled |  <p align="center"> - </p>   |  `True` |
+| <a id="xcschemes.test_target-library_targets"></a>library_targets |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.test_target-post_actions"></a>post_actions |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.test_target-pre_actions"></a>pre_actions |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.test_target-target_environment"></a>target_environment |  <p align="center"> - </p>   |  `None` |
+
+
+<a id="xcschemes.top_level_anchor_build_target"></a>
+
+## xcschemes.top_level_anchor_build_target
+
+<pre>
+xcschemes.top_level_anchor_build_target(<a href="#xcschemes.top_level_anchor_build_target-label">label</a>, <a href="#xcschemes.top_level_anchor_build_target-extension_host">extension_host</a>, <a href="#xcschemes.top_level_anchor_build_target-library_targets">library_targets</a>, <a href="#xcschemes.top_level_anchor_build_target-target_environment">target_environment</a>)
+</pre>
+
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.top_level_anchor_build_target-label"></a>label |  <p align="center"> - </p>   |  none |
+| <a id="xcschemes.top_level_anchor_build_target-extension_host"></a>extension_host |  <p align="center"> - </p>   |  `None` |
+| <a id="xcschemes.top_level_anchor_build_target-library_targets"></a>library_targets |  <p align="center"> - </p>   |  none |
+| <a id="xcschemes.top_level_anchor_build_target-target_environment"></a>target_environment |  <p align="center"> - </p>   |  `None` |
+
+
+<a id="xcschemes.top_level_build_target"></a>
+
+## xcschemes.top_level_build_target
+
+<pre>
+xcschemes.top_level_build_target(<a href="#xcschemes.top_level_build_target-label">label</a>, <a href="#xcschemes.top_level_build_target-extension_host">extension_host</a>, <a href="#xcschemes.top_level_build_target-library_targets">library_targets</a>, <a href="#xcschemes.top_level_build_target-post_actions">post_actions</a>, <a href="#xcschemes.top_level_build_target-pre_actions">pre_actions</a>,
+                                 <a href="#xcschemes.top_level_build_target-target_environment">target_environment</a>)
+</pre>
+
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="xcschemes.top_level_build_target-label"></a>label |  <p align="center"> - </p>   |  none |
+| <a id="xcschemes.top_level_build_target-extension_host"></a>extension_host |  <p align="center"> - </p>   |  `None` |
+| <a id="xcschemes.top_level_build_target-library_targets"></a>library_targets |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.top_level_build_target-post_actions"></a>post_actions |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.top_level_build_target-pre_actions"></a>pre_actions |  <p align="center"> - </p>   |  `[]` |
+| <a id="xcschemes.top_level_build_target-target_environment"></a>target_environment |  <p align="center"> - </p>   |  `None` |
 
 
 # Xcode build settings
