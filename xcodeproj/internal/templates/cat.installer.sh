@@ -4,6 +4,8 @@ set -euo pipefail
 
 shopt -s nullglob
 
+echo "Start at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
 # Functions
 
 # Echos the provided message to stderr and exits with an error (1)

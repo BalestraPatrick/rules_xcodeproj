@@ -4,6 +4,8 @@ set -euo pipefail
 
 shopt -s nullglob
 
+echo "Start at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
 # Functions
 
 # Echos the provided message to stderr and exits with an error (1)
@@ -257,5 +259,7 @@ if [[ -f "$dest/rules_xcodeproj/generated.xcfilelist" ]]; then
     mkdir -p "$dir"
   done
 fi
+
+echo "Done at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 echo 'Updated project at "%output_path%"'
