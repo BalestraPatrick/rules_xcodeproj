@@ -63,7 +63,10 @@ FAIL_FOR_INVALID_EXTRA_FILES_TARGETS = True
 
 ASSOCIATED_EXTRA_FILES = {
     "//Lib": ["//Lib:README.md"],
-    "//iOSApp/Source:iOSApp": ["//iOSApp:ownership.yaml"],
+    "//iOSApp/Source:iOSApp": [
+        "//iOSApp:ownership.yaml",
+        "//iOSApp/Resources/ExampleNestedResources:dir/goodbye.txt",
+    ],
 }
 
 UNFOCUSED_TARGETS = [
