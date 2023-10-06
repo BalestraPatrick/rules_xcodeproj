@@ -1,5 +1,7 @@
 load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 
+exports_files(["dir/goodbye.txt"], visibility = ["@rules_xcodeproj//xcodeproj:generated"])
+
 apple_resource_bundle(
     name = "ExampleNestedResources",
     bundle_id = "com.example.resources.nested",
